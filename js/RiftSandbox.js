@@ -1,19 +1,45 @@
-var RiftSandbox = (function () {
+define([
+  'Three',
+  'VRControls',
+  'VREffect',
+  'WebVRPolyfill',
+  'WebVRManager',
+
+  'js/TextArea',
+  'js/Monitor'
+],
+function (
+  THREE,
+  VRControls,
+  VREffect,
+  WebVRPolyfill,
+  WebVRManager,
+
+  TextArea,
+  Monitor
+) {
   'use strict';
   var BASE_POSITION = new THREE.Vector3(0, 1.5, -2);
-  var BASE_ROTATION = new THREE.Quaternion().setFromEuler(
-    new THREE.Euler(0, Math.PI, 0), 'YZX');
-
-  var constr = function (width, height, domTextArea, callback) {
+  var ONE_DEGREE = Math.PI / 180.0;
+  
+  var constr = function (
+    width, height,
+    domMonitor,
+    callback
+  ) {
     this.width = width;
     this.height = height;
-    this.domTextArea = domTextArea;
+    this.textAreas = null;
+    this.areTextAreasVisible = true;
+    this.domMonitor = domMonitor;
     window.HMDRotation = this.HMDRotation = new THREE.Quaternion();
-    this.BasePosition = new THREE.Vector3(0, 1.5, -2);
+
+    this.BasePosition = new THREE.Vector3(0, 1.5, 2);
     this.HMDPosition = new THREE.Vector3();
-    // this.BaseRotation = new THREE.Quaternion();
     this.plainRotation = new THREE.Vector3();
-    this.BaseRotationEuler = new THREE.Euler(0, Math.PI);
+    this.BaseRotationEuler = new THREE.Euler(0, Math.PI / 2, 0); 
+    this.BaseRotation = new THREE.Quaternion().setFromEuler(
+      this.BaseRotationEuler);
     this.scene = null;
     this.sceneStuff = [];
     this.renderer = null;
@@ -31,34 +57,58 @@ var RiftSandbox = (function () {
     this.scene = new THREE.Scene();
 
     this.camera = new THREE.PerspectiveCamera(
-      75, this.width / this.height, 1, 10000);
+      75, this.width / this.height, 0.1, 200);
+    this.scene.add(this.camera);
 
-    this.hasVR = true;
-    this.controls = new THREE.VRControls(
-      this.camera,
-      function (err) {
-        this.hasVR = !err;
-        if (err) { this.camera.quaternion.multiply(BASE_ROTATION); }
-        callback(err);
-      }.bind(this));
+    this.controls = new THREE.VRControls(this.camera);
     this.effect = new THREE.VREffect(this.renderer);
     this.effect.setSize(this.width, this.height);
 
+    this.vrManager = new WebVRManager(
+      this.renderer, this.effect, {hideButton: false});
+
     var maxAnisotropy = this.renderer.getMaxAnisotropy();
     var groundTexture = THREE.ImageUtils.loadTexture('img/background.png');
+    
     groundTexture.anisotropy = maxAnisotropy;
     groundTexture.wrapS = groundTexture.wrapT = THREE.RepeatWrapping;
-    groundTexture.repeat.set( 1000, 1000 );
+    groundTexture.repeat.set( 200, 200 );
+    
     var ground = new THREE.Mesh(
-      new THREE.PlaneGeometry( 1000, 1000 ),
+      new THREE.PlaneBufferGeometry( 200, 200 ),
       new THREE.MeshBasicMaterial({map: groundTexture}) );
     ground.rotation.x = -Math.PI / 2;
     this.scene.add(ground);
 
-    this.textArea = new TextArea(this.domTextArea);
-    this.textArea.object.position.set(0, 1.5, 0);
-    this.scene.add(this.textArea.object);
+    var axis = new THREE.AxisHelper();
+    axis.position.y = 0.1;
+    this.scene.add(axis);
 
+    this.monitor = new Monitor(this.domMonitor);
+    this.camera.add(this.monitor.object);
+  };
+
+  constr.prototype.setTextAreas = function (domTextAreas) {
+    this.domTextAreas = domTextAreas;
+    this.textAreas = this.domTextAreas.map(function (domTextArea, i) {
+      var textArea = new TextArea(domTextArea);
+      this.scene.add(textArea.object);
+      return textArea;
+    }.bind(this));
+
+    this.resetTextAreas();
+  };
+
+  constr.prototype.resetTextAreas = function () {
+    this.textAreas.forEach(function(textArea, i) {
+      textArea.object.rotateOnAxis(
+        new THREE.Vector3(0, 1, 0),
+        Math.PI / 4 * -(i + 1));
+      textArea.object.translateZ(-1.5);
+    });
+  };
+
+  constr.prototype.interceptScene = function () {
     var oldAdd = this.scene.add;
     this.scene.add = function (obj) {
       this.sceneStuff.push(obj);
@@ -66,8 +116,21 @@ var RiftSandbox = (function () {
     }.bind(this);
   };
 
-  constr.prototype.toggleTextArea = function (shouldBeVisible) {
-    this.textArea.toggle(shouldBeVisible);
+  constr.prototype.toggleTextAreas = function () {
+    this.areTextAreasVisible = !this.areTextAreasVisible;
+    this.textAreas.forEach(function (textArea) {
+      textArea.toggle(this.areTextAreasVisible);
+    }.bind(this));
+  };
+
+  constr.prototype.toggleMonitor = function () {
+    this.monitor.toggle();
+  };
+
+  constr.prototype.setInfo = function (msg) {
+    this.textAreas.forEach(function (textArea) {
+      textArea.setInfo(msg);
+    });
   };
 
   function angleRangeRad(angle) {
@@ -108,22 +171,16 @@ var RiftSandbox = (function () {
     this.sceneStuff = [];
   };
 
-  constr.prototype.render = function () {
-    this.textArea.update();
+  constr.prototype.render = function (timestamp) {
+    if (this.textAreas) {
+      this.textAreas.forEach(function (textArea) { textArea.update(); });
+    }
+    this.monitor.update();
     this.controls.update();
 
-    if (this.hasVR) {
-      this.camera.quaternion.multiplyQuaternions(BASE_ROTATION, this.camera.quaternion);
-      var rotatedHMDPosition = new THREE.Vector3();
-      rotatedHMDPosition.copy(this.camera.position);
-      rotatedHMDPosition.applyQuaternion(BASE_ROTATION);
-      this.camera.position.copy(BASE_POSITION).add(rotatedHMDPosition);
-    }
-    else {
-      this.camera.position.copy(BASE_POSITION);
-    }
+    this.camera.position.copy(this.BasePosition);
 
-    this.effect.render(this.scene, this.camera);
+    this.vrManager.render(this.scene, this.camera, timestamp);
   };
 
   constr.prototype.resize = function () {
@@ -164,7 +221,7 @@ var RiftSandbox = (function () {
   //   }
   //   this.cameraPivot.quaternion.multiplyQuaternions(
   //     this.BaseRotation, this.HMDRotation);
-  // 
+  //
   //   var rotatedHMDPosition = new THREE.Vector3();
   //   rotatedHMDPosition.copy(this.HMDPosition);
   //   rotatedHMDPosition.applyQuaternion(this.BaseRotation);
@@ -191,4 +248,4 @@ var RiftSandbox = (function () {
   };
 
   return constr;
-}());
+});

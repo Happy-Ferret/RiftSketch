@@ -1,85 +1,33 @@
 <!doctype html>
-<html ng-app="index">
+<html>
   <head>
     <title>RiftSketch</title>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
 
-    <link
-      href='//fonts.googleapis.com/css?family=Inconsolata'
-      rel='stylesheet' type='text/css' />
+
+    <script>WebFontConfig = { google: { families: [ 'Ubuntu+Mono:700:latin' ] } };</script>
+    <script src="//ajax.googleapis.com/ajax/libs/webfont/1/webfont.js"></script>
     <link
       rel="stylesheet"
       href="bower_components/bootstrap/dist/css/bootstrap.css" />
-    <link rel="stylesheet/less" href="css/index.less" />
-
-    <script>
-      var less = {
-        async: true
-      };
-    </script>
-    <script src="lib/less/less-1.3.3.min.js"></script>
-    <script src="lib/angular/angular.js"></script>
-    <script src="lib/ThreeJS/Three.js"></script>
-    <script src="lib/mousetrap.js"></script>
-    <script src="lib/leap-0.6.3.js"></script>
-    <script src="lib/seedrandom.min.js"></script>
-    <script src="bower_components/lodash/dist/lodash.min.js"></script>
-    <script src="bower_components/jquery/dist/jquery.js"></script>
-    <script src="bower_components/oauth-js/dist/oauth.min.js"></script>
-
-    <script src="lib/VRControls.js"></script>
-    <script src="lib/VREffect.js"></script>
-    <script src="js/TextArea.js"></script>
-    <script src="js/RiftSandbox.js"></script>
-    <script src="js/index.js"></script>
+    <link rel="stylesheet" href="css/index.css" />
   </head>
-  <body
-    ng-controller="SketchController"
-    ng-class="{'modal-open': (!hasOverridenUnsupported && seemsUnsupported)}">
-
-
-    <div id="container" ng-class="{'not-fullscreen': !isInfullscreen}">
+  <body>
+    <span id="textMeasurementDummy">sup?</span>
+    <div id="container">
       <canvas id="viewer"></canvas>
-      <textarea
-        class="mousetrap" ng-repeat="file in sketch.files"
-        ng-model="file.contents" spellcheck="false">
-      </textarea>
       <video id="monitor" autoplay></video>
     </div>
 
-    <div
-      class="modal-backdrop fade in"
-      ng-show="!hasOverridenUnsupported && seemsUnsupported">
-    </div>
-    <div class="modal" ng-show="!hasOverridenUnsupported && seemsUnsupported">
-      <div class="modal-dialog">
-        <div class="modal-content">
-          <div class="modal-header">RiftSketch - Unsupported Browser</div>
-          <div class="modal-body">
-            <p>RiftSketch is a live-coding environment for VR built with
-            preliminary WebVR APIs, WebGL and Three.js.</p>
+    <script 
+      data-main="js/index.js" 
+      src="bower_components/requirejs-bower/require.js">
+    </script>
 
-            <p>It seems your browser doesn't support the required WebVR
-            features. Please read the
-            <a href="https://github.com/brianpeiris/RiftSketch/blob/gh-pages/README.md">
-              setup instructions
-            </a>
-            if you would like to try RiftSketch.</p>
-
-            <iframe
-              width="560" height="315"
-              src="//www.youtube.com/embed/db-7J5OaSag"
-              frameborder="0" allowfullscreen>
-            </iframe>
-          </div>
-          <div class="modal-footer">
-            <button ng-click="hasOverridenUnsupported = true">
-              continue anyway
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
     <script>
       (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
       (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),

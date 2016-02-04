@@ -43,7 +43,6 @@ function (
     this.scene = null;
     this.sceneStuff = [];
     this.renderer = null;
-    this.vrMode = false;
     this._targetVelocity = 0;
     this._velocity = 0;
     this._rampUp = true;
@@ -64,6 +63,7 @@ function (
     this.effect = new THREE.VREffect(this.renderer);
     this.effect.setSize(this.width, this.height);
 
+    WebVRConfig.FORCE_DISTORTION = true;
     this.vrManager = new WebVRManager(
       this.renderer, this.effect, {hideButton: false});
 
@@ -152,6 +152,7 @@ function (
           antialias: true,
           canvas: document.getElementById('viewer')
       });
+      this.renderer.setPixelRatio(devicePixelRatio);
     }
     catch(e){
       alert('This application needs WebGL enabled!');
@@ -210,8 +211,13 @@ function (
     }
   };
 
-  constr.prototype.toggleVrMode = function () {
-      this.vrMode = !this.vrMode;
+  constr.prototype.resetSensor = function () {
+    this.controls.resetSensor();
+  };
+
+  constr.prototype.startVrMode = function () {
+    this.vrManager.anyModeToVR();
+    this.vrManager.setMode_(3);
   };
 
   // constr.prototype.updateCameraPositionRotation = function () {

@@ -1,26 +1,26 @@
 define([
   'firebase',
   'jquery',
-  'leap',
-  'leapjsplugins',
-  'oauth',
+  'leapjs',
+  'leapjs-plugins',
   'lodash',
+  'three',
 
-  'js/KeyboardHandler',
-  'js/RiftSandbox',
-  'js/File',
-  'js/Sketch',
-  'js/UnsupportedModal',
+  './KeyboardHandler',
+  './RiftSandbox',
+  './File',
+  './Sketch',
+  './UnsupportedModal',
 
-  'text!js/Files/Cube.js',
+  'raw!./Files/Cube.js',
 ],
 function (
   Firebase,
   $,
   Leap,
   leapjsplugins,
-  OAuth,
   _,
+  THREE,
 
   KeyboardHandler,
   RiftSandbox,
@@ -164,12 +164,12 @@ function (
     try {
       /* jshint -W054 */
       var _sketchFunc = new Function(
-        'scene', 'camera',
+        'THREE', 'scene', 'camera',
         '"use strict";\n' + this.sketch.getCode()
       );
       /* jshint +W054 */
       _sketchLoop = _sketchFunc(
-        this.riftSandbox.scene, this.riftSandbox.cameraPivot);
+        THREE, this.riftSandbox.scene, this.riftSandbox.cameraPivot);
     }
     catch (err) {
       this.riftSandbox.setInfo(err.toString());

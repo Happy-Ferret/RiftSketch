@@ -523,25 +523,9 @@
 
 	  constr.prototype.setupVideoPassthrough = function () {
 	    this.domMonitor = document.getElementById('monitor');
-	    var getUserMedia = (
-	      (
-	        navigator.webkitGetUserMedia &&
-	        navigator.webkitGetUserMedia.bind(navigator)) ||
-	      navigator.mediaDevices.getUserMedia.bind(navigator.mediaDevices));
-	    getUserMedia(
-	      {video: {
-	        mandatory: {
-	          minWidth: 1280,
-	          minHeight: 720
-	        }
-	      }},
-	      function (stream) {
+	    navigator.mediaDevices.getUserMedia({video: true}).then(function (stream) {
 	        this.domMonitor.src = window.URL.createObjectURL(stream);
-	      }.bind(this),
-	      function () {
-	        // video pass-through is optional.
-	      }
-	    );
+	    }.bind(this));
 	  };
 
 	  constr.prototype.initializeSketch = function (data) {
@@ -904,6 +888,10 @@
 	    }.bind(this));
 	    kibo.down(getShortcut('e'), function () {
 	      this.sketchController.toggleTextAreas();
+	      return false;
+	    }.bind(this));
+	    kibo.down(getShortcut('r'), function () {
+	      this.riftSandbox.toggleMonitor();
 	      return false;
 	    }.bind(this));
 
@@ -124244,10 +124232,10 @@
 	 * Helper for entering VR mode.
 	 */
 	WebVRManager.prototype.enterVRMode_ = function() {
-	  this.hmd.requestPresent({
+	  this.hmd.requestPresent([{
 	    source: this.renderer.domElement,
 	    predistorted: this.predistorted
-	  });
+	  }]);
 	};
 
 	WebVRManager.prototype.setMode_ = function(mode) {
@@ -124732,7 +124720,7 @@
 	    this.textTexture = new THREE.Texture(canvas);
 	    this.textTexture.needsUpdate = true;
 	    this.textTexture.minFilter = THREE.LinearFilter;
-	    
+
 	    var textAreaMat = new THREE.MeshBasicMaterial(
 	      {map: this.textTexture, side: THREE.DoubleSide});
 	    textAreaMat.transparent = true;
@@ -124771,13 +124759,13 @@
 	    this.infoContext.fillRect(0, 0, this.canvasSize, this.canvasSize);
 	    this.infoContext.fillStyle = 'hsl(0, 0%, 25%)';
 	    this.infoContext.fillText('Alt/Ctrl + Shift + ...', 0, FONT_SIZE_PX * 2);
-	    this.infoContext.fillText('v - VR | z - reset | e - editor', 0, FONT_SIZE_PX * 3);
+	    this.infoContext.fillText('v: VR | z: reset | e: editor | r: webcam', 0, FONT_SIZE_PX * 3);
 	    this.infoContext.fillText('j/k, u/i, n/m - change number', 0, FONT_SIZE_PX * 4);
 
 	    this.infoTexture = new THREE.Texture(canvas);
 	    this.infoTexture.needsUpdate = true;
 	    this.infoTexture.minFilter = THREE.LinearFilter;
-	    
+
 	    var infoMat = new THREE.MeshBasicMaterial(
 	      {map: this.infoTexture, side: THREE.DoubleSide});
 	    infoMat.transparent = true;
@@ -124944,8 +124932,8 @@
 	  'use strict';
 
 	  var MESH_SIZE = 0.5;
-	  var WIDTH = 1280;
-	  var HEIGHT = 720;
+	  var WIDTH = 1024;
+	  var HEIGHT = 512;
 	  var ASPECT = HEIGHT / WIDTH;
 
 	  var constr = function (domMonitor) {
